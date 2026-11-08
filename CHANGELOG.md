@@ -7,6 +7,11 @@ All notable changes to PLaMo Translate Desktop. Each release's section here also
 ### Added
 
 - A keyboard shortcut in the browser extension translates the page, as **Translate this page with PLaMo** in the right-click menu does. It has no key at first: set one at `chrome://extensions/shortcuts`.
+- A keyboard shortcut in the browser extension opens the side panel and translates the selected text there, as **Translate with PLaMo** in the right-click menu does; with nothing selected, it puts the cursor in the panel's text box. It has no key at first: set one at `chrome://extensions/shortcuts`.
+
+### Fixed
+
+- **Translate with PLaMo** in the browser extension shows the translation in the side panel of the window it was chosen in. A side panel open in another window could take it.
 
 ## [0.4.0] - 2026-11-07
 

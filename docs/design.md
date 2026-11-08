@@ -513,6 +513,13 @@ or, from v0.4.0, on its own with an in-browser engine (see "In-browser engine" b
   - The extension: context menu items for selected text ("Translate with PLaMo", shown in the side panel) and for the whole page,
     a shortcut for the whole page too (a manifest command with no suggested key, which grants `activeTab` like the context menu),
     the side panel, and `page.js` for page translation.
+  - The selection shortcut (a manifest command with no suggested key) opens the panel and translates the text selected in the tab, as the context menu does,
+    and puts the cursor in the panel's text box; with nothing selected, it only does the last. It is a command of its own because the toolbar button
+    and its shortcut (`_execute_action`) open the panel through `openPanelOnActionClick`, which grants no `activeTab`.
+    The selection is read once, at the press, only in the frame where the keyboard is (opening the panel takes the focus, so `document.hasFocus()`
+    cannot tell), and never from masked fields. Pressed while the keyboard is in the panel, shown for a while, it leaves the panel's text as it is:
+    the page's selection is then an old one. The keyboard moves to the panel only when the panel opens; F6 reaches an open one.
+  - Requests to the panel (from the context menu and the selection shortcut) go through session storage with their window; only that window's panel takes them.
   - Texts come from `_locales` through `i18n.js` (shared by the panel, the background, and `page.js`). They follow the browser
     (`chrome.i18n`) unless the panel's display language picks a locale, whose `messages.json` is then read and filled in the same way;
     `page.js` gets those messages from the background (`ui_messages`) instead of reading the files itself.

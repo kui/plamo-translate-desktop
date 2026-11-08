@@ -250,17 +250,34 @@ const ready = Promise.all([
   licenseAccepted = saved.licenseAccepted;
 });
 
-// Text selected in a page arrives through session storage (see background.js).
+// Text selected in a page arrives through session storage (see requestPanel in background.js),
+// for the panel of one window.
+const windowId = chrome.windows.getCurrent().then((w) => w.id);
 chrome.storage.session.get("request").then(({ request }) => request && ready.then(() => takeRequest(request)));
 chrome.storage.session.onChanged.addListener((changes) => {
   const request = changes.request?.newValue;
   if (request) ready.then(() => takeRequest(request));
 });
 
-function takeRequest(request) {
+/** When the panel was last shown: opened, or shown again from Chrome's cache. */
+let shownAt = Date.now();
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "visible") shownAt = Date.now();
+});
+
+async function takeRequest(request) {
+  if (request.windowId !== (await windowId)) return;
   chrome.storage.session.remove("request");
-  $("source").value = request.text;
-  translate(request.text);
+  // The shortcut pressed while the keyboard was in the panel, shown for a while: the page's
+  // selection is an old one, and the panel keeps what it has.
+  if (request.from === "shortcut" && document.hasFocus() && Date.now() - shownAt > 1000) return;
+  const source = $("source");
+  if (request.text) {
+    source.value = request.text;
+    translate(request.text);
+  }
+  source.focus();
+  source.setSelectionRange(source.value.length, source.value.length);
 }
 
 // ---- Talking to the background ----

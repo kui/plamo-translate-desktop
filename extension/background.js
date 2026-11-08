@@ -702,11 +702,69 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
   if (info.menuItemId !== MENU_SELECTION || !info.selectionText) return;
   // Must be called while handling the click, before anything asynchronous.
   chrome.sidePanel.open({ windowId: tab.windowId }).catch(() => {});
-  // The panel picks this up when it opens, or right away if it is open already.
-  chrome.storage.session.set({ request: { text: info.selectionText, at: Date.now() } });
+  requestPanel(tab.windowId, info.selectionText, "menu");
 });
 
-// The page shortcut (manifest `commands`), which grants activeTab like the context menu.
+/**
+ * Asks the panel of a window to translate `text`, or with none to take the cursor only. The panel
+ * picks this up when it opens, or right away if it is open already.
+ */
+function requestPanel(windowId, text, from) {
+  chrome.storage.session.set({ request: { windowId, text, from, at: Date.now() } });
+}
+
+/**
+ * The text selected in a tab where the keyboard is: "" when nothing is selected there, when that
+ * is a frame the extension cannot enter (another site's, a PDF), or when it cannot enter the tab.
+ */
+async function selectedText(tabId) {
+  const results = await chrome.scripting
+    .executeScript({
+      target: { tabId, allFrames: true },
+      // A page still loading does not keep the panel waiting.
+      injectImmediately: true,
+      func: () => {
+        const focusedIn = (doc) => {
+          let el = doc.activeElement;
+          while (el?.shadowRoot?.activeElement) el = el.shadowRoot.activeElement;
+          return el;
+        };
+        // The keyboard is in this frame when each frame above has it on this one's way. Focus is
+        // not asked: opening the panel takes it, usually before this runs.
+        try {
+          for (let w = window; w !== w.top; w = w.parent) {
+            if (focusedIn(w.parent.document) !== w.frameElement) return "";
+          }
+        } catch {
+          return ""; // Below a frame of another site.
+        }
+        const el = focusedIn(document);
+        if (el instanceof HTMLIFrameElement || el instanceof HTMLFrameElement || el instanceof HTMLObjectElement || el instanceof HTMLEmbedElement) {
+          return ""; // In a frame below, which answers for itself.
+        }
+        if (el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement) {
+          // Masked fields: passwords, and boxes masked by CSS (PIN fields). Their document
+          // selection is the masking dots.
+          const security = getComputedStyle(el).getPropertyValue("-webkit-text-security");
+          if (el.type === "password" || (security && security !== "none")) return "";
+          // A text box's selection is not the document's.
+          if (el.selectionStart != null) return el.value.slice(el.selectionStart, el.selectionEnd).trim();
+        }
+        return getSelection()?.toString().trim() ?? "";
+      },
+    })
+    .catch(() => []);
+  return results.find((r) => r.result)?.result ?? "";
+}
+
+// The shortcuts (manifest `commands`), which grant activeTab like the context menu.
 chrome.commands.onCommand.addListener((command, tab) => {
-  if (command === "translate-page" && tab?.id != null) translatePage(tab.id).catch(() => {});
+  if (tab?.id == null) return;
+  if (command === "translate-page") {
+    translatePage(tab.id).catch(() => {});
+  } else if (command === "translate-selection") {
+    // Must be called while handling the shortcut, before anything asynchronous.
+    chrome.sidePanel.open({ windowId: tab.windowId }).catch(() => {});
+    selectedText(tab.id).then((text) => requestPanel(tab.windowId, text, "shortcut"));
+  }
 });

@@ -188,6 +188,9 @@
   "menuTranslatePage": {
     "message": "Translate this page with PLaMo"
   },
+  "commandTranslateSelection": {
+    "message": "Translate the selected text"
+  },
   "translatePage": {
     "message": "Translate this page"
   },

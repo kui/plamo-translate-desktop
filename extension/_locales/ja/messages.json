@@ -188,6 +188,9 @@
   "menuTranslatePage": {
     "message": "このページを PLaMo で翻訳"
   },
+  "commandTranslateSelection": {
+    "message": "選択した文章を翻訳"
+  },
   "translatePage": {
     "message": "このページを翻訳"
   },

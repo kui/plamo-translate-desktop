@@ -408,8 +408,9 @@ function errorText(message) {
  * would help.
  */
 async function pageFailed(error) {
-  // The extension may enter a tab after the toolbar button or the context menu was used on it
-  // (activeTab), until the tab goes to another site; buttons in the panel do not grant that.
+  // The extension may enter a tab after the toolbar button, the context menu, or a shortcut was
+  // used on it (activeTab), until the tab goes to another site; buttons in the panel do not grant
+  // that.
   // Other tabs need the permission for their site. Browser pages, the extension stores, and
   // error pages cannot be entered at all.
   const all = { origins: ["<all_urls>"] };

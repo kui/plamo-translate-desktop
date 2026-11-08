@@ -511,11 +511,12 @@ or, from v0.4.0, on its own with an in-browser engine (see "In-browser engine" b
   - `plamo-translate-host` ships next to the app and shares its DLLs/shared libraries, models, and settings, so the package grows by about 1 MB.
     It has no GPUI dependency. It is a console program on Windows too, since Chrome starts hosts through `cmd.exe` with the window hidden.
   - The extension: context menu items for selected text ("Translate with PLaMo", shown in the side panel) and for the whole page,
+    a shortcut for the whole page too (a manifest command with no suggested key, which grants `activeTab` like the context menu),
     the side panel, and `page.js` for page translation.
   - Texts come from `_locales` through `i18n.js` (shared by the panel, the background, and `page.js`). They follow the browser
     (`chrome.i18n`) unless the panel's display language picks a locale, whose `messages.json` is then read and filled in the same way;
     `page.js` gets those messages from the background (`ui_messages`) instead of reading the files itself.
-    The manifest's name and description always follow the browser.
+    The manifest's name and description, and the shortcut's description, always follow the browser.
   - The background service worker (`background.js`) holds the one native port and shares it: panel translations start at once
     (interrupting a page batch, whose unfinished paragraphs go back to the queue), and page paragraphs go to the host in batches
     of up to 10 paragraphs or 2,000 characters while nothing else runs. Chrome keeps the worker alive while the port is open.
@@ -542,7 +543,7 @@ or, from v0.4.0, on its own with an in-browser engine (see "In-browser engine" b
 - Closing the port ends the host and frees the model's memory and the app's files (which Windows keeps locked while the host runs).
   The next request starts it again.
 - Page translation (`page.js`, injected on request with `activeTab`, or from the panel with the optional all-sites permission):
-  - Buttons in the side panel do not grant `activeTab` (the toolbar button and the context menu do), so the panel reaches a tab only after one of those was used on it,
+  - Buttons in the side panel do not grant `activeTab` (the toolbar button, the context menu, and the shortcuts do), so the panel reaches a tab only after one of those was used on it,
     until the tab goes to another site. When the injection fails for want of a host permission, the panel offers the all-sites permission unless it is granted already;
     other failures (browser pages, the extension stores, error pages) say that the page cannot be translated. The notice sits under the page button.
   - Injecting into a page that has `page.js` already starts it again; it sends only runs not sent yet, and shows its box again even when there are none.

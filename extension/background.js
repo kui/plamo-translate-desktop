@@ -705,3 +705,8 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
   // The panel picks this up when it opens, or right away if it is open already.
   chrome.storage.session.set({ request: { text: info.selectionText, at: Date.now() } });
 });
+
+// The page shortcut (manifest `commands`), which grants activeTab like the context menu.
+chrome.commands.onCommand.addListener((command, tab) => {
+  if (command === "translate-page" && tab?.id != null) translatePage(tab.id).catch(() => {});
+});
